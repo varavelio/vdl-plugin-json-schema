@@ -23,7 +23,11 @@ type JsonSchemaDocument = {
 };
 
 /**
- * Generates the plugin output consumed by VDL.
+ * Generates the final plugin output consumed by VDL.
+ *
+ * This is the narrow runtime surface used by `src/index.ts`. It converts the
+ * in-memory JSON Schema document into the file contract expected by VDL and
+ * maps validation failures to structured plugin errors.
  */
 export function generateFunc(input: PluginInput): PluginOutput {
   const document = buildJsonSchemaDocument(input);
@@ -46,6 +50,9 @@ export function generateFunc(input: PluginInput): PluginOutput {
 
 /**
  * Builds the JSON Schema document before it is stringified.
+ *
+ * The function is intentionally pure so tests can assert the generated schema
+ * structure directly without needing to inspect file output.
  */
 export function buildJsonSchemaDocument(
   input: PluginInput,
@@ -76,6 +83,12 @@ export function buildJsonSchemaDocument(
   return document;
 }
 
+/**
+ * Collects all top-level schema definitions from the VDL IR.
+ *
+ * Enums and types are emitted into `$defs` using deterministic key ordering so
+ * generated output remains stable across runs.
+ */
 function buildDefinitions(ir: IrSchema): JsonSchemaDefinitions {
   const definitions: JsonSchemaDefinitions = {};
 
@@ -93,6 +106,12 @@ function buildDefinitions(ir: IrSchema): JsonSchemaDefinitions {
   return sortRecord(definitions);
 }
 
+/**
+ * Converts a VDL enum definition into its JSON Schema representation.
+ *
+ * Enum member values are unwrapped from IR literals so the emitted `enum`
+ * array contains plain JSON values.
+ */
 function buildEnumSchema(enumDef: EnumDef): JsonSchema {
   return withDescription(
     {
@@ -103,6 +122,12 @@ function buildEnumSchema(enumDef: EnumDef): JsonSchema {
   );
 }
 
+/**
+ * Converts a normalized VDL type reference into JSON Schema.
+ *
+ * The IR already encodes all supported shape variants, so the conversion only
+ * needs to branch on `typeRef.kind` and emit the matching JSON Schema fragment.
+ */
 function buildTypeRefSchema(typeRef: TypeRef): JsonSchema {
   switch (typeRef.kind) {
     case "primitive":
@@ -144,6 +169,9 @@ function buildTypeRefSchema(typeRef: TypeRef): JsonSchema {
   }
 }
 
+/**
+ * Maps a VDL primitive type name to the matching JSON Schema primitive shape.
+ */
 function buildPrimitiveSchema(
   primitiveName: TypeRef["primitiveName"],
 ): JsonSchema {
@@ -161,6 +189,12 @@ function buildPrimitiveSchema(
   }
 }
 
+/**
+ * Converts an object field list into a JSON Schema object definition.
+ *
+ * Properties and required fields are both sorted to keep output deterministic
+ * and easy to compare in tests and generated diffs.
+ */
 function buildObjectSchema(fields: Field[]): JsonSchema {
   const properties: JsonSchemaDefinitions = {};
   const required: string[] = [];
@@ -188,6 +222,12 @@ function buildObjectSchema(fields: Field[]): JsonSchema {
   return schema;
 }
 
+/**
+ * Attaches a description to a schema fragment when documentation is present.
+ *
+ * Returning the original object when no description exists keeps the emitted
+ * output minimal and avoids unnecessary object copies.
+ */
 function withDescription(schema: JsonSchema, description?: string): JsonSchema {
   if (description === undefined || description === "") {
     return schema;
@@ -199,6 +239,12 @@ function withDescription(schema: JsonSchema, description?: string): JsonSchema {
   };
 }
 
+/**
+ * Builds the user-facing error message for an invalid `root` option.
+ *
+ * Suggestions are produced through the SDK fuzzy search helper so the wording
+ * stays helpful without reimplementing approximate matching locally.
+ */
 function buildMissingRootError(
   definitionNames: readonly string[],
   root: string,
@@ -212,6 +258,9 @@ function buildMissingRootError(
   return `Root type "${root}" was not found in the generated schema definitions.${suggestionSuffix}`;
 }
 
+/**
+ * Formats fuzzy-search suggestions into a short natural-language phrase.
+ */
 function formatSuggestions(suggestions: readonly string[]): string {
   if (suggestions.length === 1) {
     return `"${suggestions[0]}"`;
@@ -229,10 +278,19 @@ function formatSuggestions(suggestions: readonly string[]): string {
   return `${head.join(", ")}, or ${tail}`;
 }
 
+/**
+ * Builds a local `$defs` reference for a named schema definition.
+ */
 function createDefinitionRef(name: string): string {
   return `#/$defs/${name}`;
 }
 
+/**
+ * Returns a new object with keys sorted lexicographically.
+ *
+ * JSON objects are unordered by specification, but stable key order keeps the
+ * generated file readable and makes golden-file comparisons predictable.
+ */
 function sortRecord<T>(record: Record<string, T>): Record<string, T> {
   const sortedRecord: Record<string, T> = {};
 
@@ -243,6 +301,9 @@ function sortRecord<T>(record: Record<string, T>): Record<string, T> {
   return sortedRecord;
 }
 
+/**
+ * Returns a lexicographically sorted copy of the provided string list.
+ */
 function sortStrings(values: readonly string[]): string[] {
   return [...values].sort((left, right) => {
     return left.localeCompare(right);
