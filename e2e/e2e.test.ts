@@ -1,42 +1,84 @@
-import { execSync } from "node:child_process";
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { existsSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-// This e2e suite is only a example.
-// Keep this fixture-per-folder shape when you add real e2e tests.
-
-// Each fixture folder is one example project inside `fixtures/`.
+// Each fixture directory represents a standalone VDL project configured to run
+// this plugin exactly as a user would run it from the command line.
 const fixturesDir = resolve(__dirname, "fixtures");
-const fixtures = readdirSync(fixturesDir, { withFileTypes: true })
-  .filter((dirent) => dirent.isDirectory())
-  .map((dirent) => dirent.name);
 
-describe("VDL Plugin: end-to-end tests", () => {
-  it.each(fixtures)("compiles fixture: %s", (fixtureName) => {
+// Only include real fixture projects. This keeps the suite resilient to helper
+// folders that may exist under `e2e/fixtures` in the future.
+const fixtureNames = readdirSync(fixturesDir, { withFileTypes: true })
+  .filter((dirent) => dirent.isDirectory())
+  .filter((dirent) => {
+    return existsSync(join(fixturesDir, dirent.name, "vdl.config.vdl"));
+  })
+  .map((dirent) => dirent.name)
+  .sort((left, right) => left.localeCompare(right));
+
+describe("VDL Plugin JSON Schema end-to-end", () => {
+  it.each(fixtureNames)("matches fixture %s", (fixtureName) => {
     const fixturePath = join(fixturesDir, fixtureName);
     const outDir = join(fixturePath, "gen");
-    const postTestPath = join(fixturePath, "main.ts");
+    const expectedDir = join(fixturePath, "expected");
+    const expectedErrorPath = join(fixturePath, "expected-error.txt");
 
-    // Run VDL here, like a user would run it.
-    execSync("npx vdl generate", { cwd: fixturePath, stdio: "pipe" });
+    // Start every fixture from a clean output directory so the assertions only
+    // observe files produced by the current test run.
+    rmSync(outDir, { recursive: true, force: true });
 
-    // Read generated files in a stable order.
-    const generatedFiles = readdirSync(outDir).sort();
-    expect(generatedFiles.length).toBeGreaterThan(0);
+    // Error fixtures assert the exact user-facing message and also verify that
+    // generation aborts before writing any output files.
+    if (existsSync(expectedErrorPath)) {
+      const expectedError = readFileSync(expectedErrorPath, "utf-8").trim();
 
-    // Snapshot checks are optional, but this is a good pattern to keep.
-    for (const file of generatedFiles) {
-      const content = readFileSync(join(outDir, file), "utf-8");
-      expect(content).toMatchSnapshot(file);
+      expect(() => {
+        execFileSync("npx", ["vdl", "generate"], {
+          cwd: fixturePath,
+          stdio: "pipe",
+        });
+      }).toThrowError(expectedError);
+
+      expect(existsSync(outDir)).toBe(false);
+      return;
     }
 
-    // Put small extra checks in `main.ts` when a fixture needs them.
-    // If you need to check something in other languages, you can
-    // tweak the dev container and add the command to run the test
-    // here.
-    if (existsSync(postTestPath)) {
-      execSync("node main.ts", { cwd: fixturePath, stdio: "inherit" });
+    // Successful fixtures execute the real `vdl generate` command so the suite
+    // validates the plugin through the same integration path used in practice.
+    execFileSync("npx", ["vdl", "generate"], {
+      cwd: fixturePath,
+      stdio: "pipe",
+    });
+
+    // Compare filenames first so missing or unexpected outputs are caught with
+    // a direct and easy-to-read assertion failure.
+    const generatedFiles = readdirSync(outDir).sort((left, right) => {
+      return left.localeCompare(right);
+    });
+    const expectedFiles = readdirSync(expectedDir).sort((left, right) => {
+      return left.localeCompare(right);
+    });
+
+    expect(generatedFiles).toEqual(expectedFiles);
+
+    // JSON outputs are compared structurally to avoid failures caused only by
+    // formatting differences, while non-JSON fixtures keep exact text checks.
+    for (const fileName of expectedFiles) {
+      const generatedContent = readFileSync(join(outDir, fileName), "utf-8");
+      const expectedContent = readFileSync(
+        join(expectedDir, fileName),
+        "utf-8",
+      );
+
+      if (fileName.endsWith(".json")) {
+        expect(JSON.parse(generatedContent)).toEqual(
+          JSON.parse(expectedContent),
+        );
+        continue;
+      }
+
+      expect(generatedContent).toBe(expectedContent);
     }
   });
 });
