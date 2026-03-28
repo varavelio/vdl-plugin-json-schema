@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "LegacyStatus": {
+      "type": "string",
+      "enum": [
+        "old"
+      ],
+      "description": "Legacy status enum.\n\nDeprecated: Use Status instead.",
+      "deprecated": true
+    },
+    "LegacyUser": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Deprecated: This schema element is deprecated and should not be used in new code.",
+          "deprecated": true
+        },
+        "status": {
+          "$ref": "#/$defs/LegacyStatus"
+        }
+      },
+      "required": [
+        "name",
+        "status"
+      ],
+      "description": "Legacy user payload.\n\nDeprecated: This schema element is deprecated and should not be used in new code.",
+      "deprecated": true
+    }
+  },
+  "$ref": "#/$defs/LegacyUser"
+}

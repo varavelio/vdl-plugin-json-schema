@@ -1,0 +1,13 @@
+""" Legacy status enum. """
+@deprecated("Use Status instead.")
+enum LegacyStatus {
+  Old = "old"
+}
+
+""" Legacy user payload. """
+@deprecated
+type LegacyUser {
+  @deprecated
+  name string
+  status LegacyStatus
+}
