@@ -1,0 +1,7 @@
+type Config {
+  version string
+}
+
+type Settings {
+  theme string
+}
