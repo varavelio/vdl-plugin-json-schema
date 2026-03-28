@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "AliasBundle": {
+      "type": "object",
+      "properties": {
+        "createdAt": {
+          "$ref": "#/$defs/CreatedAt"
+        },
+        "ids": {
+          "$ref": "#/$defs/UserIds"
+        },
+        "labels": {
+          "$ref": "#/$defs/Labels"
+        },
+        "matrix": {
+          "$ref": "#/$defs/ScoreMatrix"
+        },
+        "primaryId": {
+          "$ref": "#/$defs/UserId"
+        }
+      },
+      "required": [
+        "createdAt",
+        "ids",
+        "matrix",
+        "primaryId"
+      ]
+    },
+    "CreatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "Labels": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "ScoreMatrix": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        }
+      }
+    },
+    "UserId": {
+      "type": "string"
+    },
+    "UserIds": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/UserId"
+      }
+    }
+  },
+  "$ref": "#/$defs/AliasBundle"
+}

@@ -1,0 +1,17 @@
+type UserId string
+
+type CreatedAt datetime
+
+type ScoreMatrix float[][]
+
+type Labels map[string]
+
+type UserIds UserId[]
+
+type AliasBundle {
+  createdAt CreatedAt
+  ids UserIds
+  labels? Labels
+  matrix ScoreMatrix
+  primaryId UserId
+}
