@@ -54,7 +54,7 @@ __name(getOptionString, "getOptionString");
 
 // src/json-schema-constants.ts
 var JSON_SCHEMA_DRAFT = "https://json-schema.org/draft/2020-12/schema";
-var OUTPUT_PATH = "schema.json";
+var DEFAULT_OUTPUT_PATH = "schema.json";
 var DEFAULT_DEPRECATED_MESSAGE = "This schema element is deprecated and should not be used in new code.";
 
 // node_modules/@varavel/vdl-plugin-sdk/dist/utils/ir/get-annotation.js
@@ -524,6 +524,11 @@ __name(buildJsonSchemaDocument, "buildJsonSchemaDocument");
 // src/json-schema-generate.ts
 function generateFunc(input) {
   const document = buildJsonSchemaDocument(input);
+  const outFile = getOptionString(
+    input.options,
+    "outFile",
+    DEFAULT_OUTPUT_PATH
+  );
   if ("error" in document) {
     return {
       errors: [{ message: document.error }]
@@ -532,7 +537,7 @@ function generateFunc(input) {
   return {
     files: [
       {
-        path: OUTPUT_PATH,
+        path: outFile === "" ? DEFAULT_OUTPUT_PATH : outFile,
         content: `${JSON.stringify(document, null, 2)}
 `
       }
