@@ -1,0 +1,15 @@
+type Zoo {
+  bravo string
+  alpha string
+  charlie? string
+}
+
+enum Zebra {
+  A = "a"
+}
+
+type Beta bool
+
+enum Alpha {
+  A = "a"
+}

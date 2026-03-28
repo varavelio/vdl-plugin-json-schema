@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "Alpha": {
+      "type": "string",
+      "enum": [
+        "a"
+      ]
+    },
+    "Beta": {
+      "type": "boolean"
+    },
+    "Zebra": {
+      "type": "string",
+      "enum": [
+        "a"
+      ]
+    },
+    "Zoo": {
+      "type": "object",
+      "properties": {
+        "alpha": {
+          "type": "string"
+        },
+        "bravo": {
+          "type": "string"
+        },
+        "charlie": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "alpha",
+        "bravo"
+      ]
+    }
+  }
+}
