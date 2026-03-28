@@ -50,16 +50,17 @@ vdl generate
 
 - `schema.json`
 
-The plugin always writes a single file named `schema.json` inside your `outDir`.
+By default, the plugin writes a single file named `schema.json` inside your `outDir`.
 
 ## Plugin Options
 
 All options are optional.
 
-| Option | Type     | Default | What it changes                                                                                                                                                                                              |
-| ------ | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `id`   | `string` | `""`    | Sets the top-level `$id` of the generated JSON Schema document. Use it when your schema should have a canonical URI.                                                                                         |
-| `root` | `string` | `""`    | Sets the top-level `$ref` to a named definition inside `$defs`. Use it when you want one main entry point such as `Config` or `Product`. If the name does not exist, generation fails with a friendly error. |
+| Option    | Type     | Default         | What it changes                                                                                                                                                                                              |
+| --------- | -------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `outFile` | `string` | `"schema.json"` | Sets the filename written inside `outDir`. Use it when you want a custom output name such as `my-schema.json` or `product.schema.json`.                                                                      |
+| `id`      | `string` | `""`            | Sets the top-level `$id` of the generated JSON Schema document. Use it when your schema should have a canonical URI.                                                                                         |
+| `root`    | `string` | `""`            | Sets the top-level `$ref` to a named definition inside `$defs`. Use it when you want one main entry point such as `Config` or `Product`. If the name does not exist, generation fails with a friendly error. |
 
 Example with all options:
 
@@ -72,6 +73,7 @@ const config = {
       schema "./schema.vdl"
       outDir "./gen"
       options {
+        outFile "product.schema.json"
         id "https://example.com/schemas/product.schema.json"
         root "Product"
       }
@@ -148,7 +150,7 @@ const config = {
 }
 ```
 
-Running `vdl generate` produces `./gen/schema.json` similar to:
+Running `vdl generate` produces `./gen/product.schema.json` similar to:
 
 ```json
 {
