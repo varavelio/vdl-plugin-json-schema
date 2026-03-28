@@ -1,0 +1,21 @@
+""" Shared status enum. """
+enum Status {
+  Active = "active"
+  Inactive = "inactive"
+}
+
+""" User profile payload. """
+type Profile {
+  """ Biography text. """
+  bio? string
+
+  """ Current status. """
+  status Status
+
+  """ Preferred tags. """
+  tags? string[]
+
+  username string
+}
+
+type EmptyObject {}

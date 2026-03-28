@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "EmptyObject": {
+      "type": "object",
+      "properties": {}
+    },
+    "Profile": {
+      "type": "object",
+      "properties": {
+        "bio": {
+          "type": "string",
+          "description": "Biography text."
+        },
+        "status": {
+          "$ref": "#/$defs/Status",
+          "description": "Current status."
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Preferred tags."
+        },
+        "username": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "username"
+      ],
+      "description": "User profile payload."
+    },
+    "Status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive"
+      ],
+      "description": "Shared status enum."
+    }
+  }
+}
