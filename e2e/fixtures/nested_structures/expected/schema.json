@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "ComplexRoot": {
+      "type": "object",
+      "properties": {
+        "layer1": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "scores": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "integer"
+                  }
+                }
+              },
+              "tags": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "required": [
+              "id",
+              "scores",
+              "tags"
+            ]
+          }
+        },
+        "layer2": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "config": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "grid": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            },
+            "required": [
+              "config",
+              "grid"
+            ]
+          }
+        },
+        "pureNested": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "children": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "grandchildren": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "level3": {
+                            "type": "boolean"
+                          },
+                          "matrix": {
+                            "type": "array",
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "val": {
+                                    "type": "number"
+                                  }
+                                },
+                                "required": [
+                                  "val"
+                                ]
+                              }
+                            }
+                          }
+                        },
+                        "required": [
+                          "level3",
+                          "matrix"
+                        ]
+                      }
+                    },
+                    "level2": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "grandchildren",
+                    "level2"
+                  ]
+                }
+              },
+              "level1": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "children",
+              "level1"
+            ]
+          }
+        }
+      },
+      "required": [
+        "layer1",
+        "layer2",
+        "pureNested"
+      ]
+    }
+  }
+}

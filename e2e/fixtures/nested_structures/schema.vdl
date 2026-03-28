@@ -1,0 +1,25 @@
+type ComplexRoot {
+  layer1 {
+    id string
+    scores map[int][]
+    tags map[string[]]
+  }[]
+
+  layer2 map[{
+    config map[string]
+    grid map[float][][]
+  }]
+
+  pureNested {
+    children {
+      grandchildren {
+        level3 bool
+        matrix {
+          val float
+        }[][]
+      }[]
+      level2 int
+    }[]
+    level1 string
+  }[]
+}
