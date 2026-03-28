@@ -1,0 +1,180 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "CircularBundle": {
+      "type": "object",
+      "properties": {
+        "chain": {
+          "$ref": "#/$defs/NodeA"
+        },
+        "optional": {
+          "$ref": "#/$defs/FullyOptionalA"
+        },
+        "self": {
+          "$ref": "#/$defs/SelfReferencing"
+        }
+      },
+      "required": [
+        "chain",
+        "optional",
+        "self"
+      ]
+    },
+    "FullyOptionalA": {
+      "type": "object",
+      "properties": {
+        "b": {
+          "$ref": "#/$defs/FullyOptionalB"
+        },
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "FullyOptionalB": {
+      "type": "object",
+      "properties": {
+        "c": {
+          "$ref": "#/$defs/FullyOptionalC"
+        },
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "FullyOptionalC": {
+      "type": "object",
+      "properties": {
+        "d": {
+          "$ref": "#/$defs/FullyOptionalD"
+        },
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "FullyOptionalD": {
+      "type": "object",
+      "properties": {
+        "a": {
+          "$ref": "#/$defs/FullyOptionalA"
+        },
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "NodeA": {
+      "type": "object",
+      "properties": {
+        "nodeB": {
+          "$ref": "#/$defs/NodeB"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "nodeB",
+        "value"
+      ]
+    },
+    "NodeB": {
+      "type": "object",
+      "properties": {
+        "nodeC": {
+          "$ref": "#/$defs/NodeC"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "nodeC",
+        "value"
+      ]
+    },
+    "NodeC": {
+      "type": "object",
+      "properties": {
+        "nodeD": {
+          "$ref": "#/$defs/NodeD"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "nodeD",
+        "value"
+      ]
+    },
+    "NodeD": {
+      "type": "object",
+      "properties": {
+        "nodeE": {
+          "$ref": "#/$defs/NodeE"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "nodeE",
+        "value"
+      ]
+    },
+    "NodeE": {
+      "type": "object",
+      "properties": {
+        "backToA": {
+          "$ref": "#/$defs/NodeA"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "value"
+      ]
+    },
+    "SelfReferencing": {
+      "type": "object",
+      "properties": {
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SelfReferencing"
+          }
+        },
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "parent": {
+          "$ref": "#/$defs/SelfReferencing"
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ]
+    }
+  },
+  "$id": "https://example.com/circular-refs.schema.json",
+  "$ref": "#/$defs/CircularBundle"
+}
