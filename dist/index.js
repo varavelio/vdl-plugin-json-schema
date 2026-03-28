@@ -1,8 +1,6 @@
 "use strict";
 var __defProp = Object.defineProperty;
-var __defProps = Object.defineProperties;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
-var __getOwnPropDescs = Object.getOwnPropertyDescriptors;
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __getOwnPropSymbols = Object.getOwnPropertySymbols;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
@@ -19,7 +17,6 @@ var __spreadValues = (a, b) => {
     }
   return a;
 };
-var __spreadProps = (a, b) => __defProps(a, __getOwnPropDescs(b));
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 var __export = (target, all) => {
   for (var name in all)
@@ -47,6 +44,32 @@ function definePlugin(handler) {
   return handler;
 }
 __name(definePlugin, "definePlugin");
+
+// node_modules/@varavel/vdl-plugin-sdk/dist/utils/options/get-option-string.js
+function getOptionString(options, key, defaultValue) {
+  const value = options === null || options === void 0 ? void 0 : options[key];
+  return value === void 0 ? defaultValue : value;
+}
+__name(getOptionString, "getOptionString");
+
+// src/json-schema-constants.ts
+var JSON_SCHEMA_DRAFT = "https://json-schema.org/draft/2020-12/schema";
+var OUTPUT_PATH = "schema.json";
+var DEFAULT_DEPRECATED_MESSAGE = "This schema element is deprecated and should not be used in new code.";
+
+// node_modules/@varavel/vdl-plugin-sdk/dist/utils/ir/get-annotation.js
+function getAnnotation(annotations, name) {
+  if (!annotations) return void 0;
+  return annotations.find((anno) => anno.name === name);
+}
+__name(getAnnotation, "getAnnotation");
+
+// node_modules/@varavel/vdl-plugin-sdk/dist/utils/ir/get-annotation-arg.js
+function getAnnotationArg(annotations, name) {
+  const anno = getAnnotation(annotations, name);
+  return anno === null || anno === void 0 ? void 0 : anno.argument;
+}
+__name(getAnnotationArg, "getAnnotationArg");
 
 // node_modules/@varavel/vdl-plugin-sdk/dist/utils/ir/unwrap-literal.js
 function unwrapLiteral(value) {
@@ -79,12 +102,169 @@ function unwrapLiteralValue(value) {
 }
 __name(unwrapLiteralValue, "unwrapLiteralValue");
 
-// node_modules/@varavel/vdl-plugin-sdk/dist/utils/options/get-option-string.js
-function getOptionString(options, key, defaultValue) {
-  const value = options === null || options === void 0 ? void 0 : options[key];
-  return value === void 0 ? defaultValue : value;
+// src/json-schema-metadata.ts
+function withSchemaMetadata(schema, description, annotations) {
+  const deprecatedMessage = getDeprecatedMessage(annotations);
+  const fullDescription = buildDescription(description, deprecatedMessage);
+  const nextSchema = __spreadValues({}, schema);
+  if (fullDescription !== void 0) {
+    nextSchema.description = fullDescription;
+  }
+  if (deprecatedMessage !== void 0) {
+    nextSchema.deprecated = true;
+  }
+  return nextSchema;
 }
-__name(getOptionString, "getOptionString");
+__name(withSchemaMetadata, "withSchemaMetadata");
+function getDeprecatedMessage(annotations) {
+  const deprecated = getAnnotation(annotations, "deprecated");
+  if (deprecated === void 0) {
+    return void 0;
+  }
+  const argument = getAnnotationArg(annotations, "deprecated");
+  const unwrapped = argument !== void 0 ? unwrapLiteral(argument) : void 0;
+  if (typeof unwrapped === "string" && unwrapped.trim().length > 0) {
+    return unwrapped;
+  }
+  return DEFAULT_DEPRECATED_MESSAGE;
+}
+__name(getDeprecatedMessage, "getDeprecatedMessage");
+function buildDescription(description, deprecatedMessage) {
+  var _a;
+  const lines = (_a = description == null ? void 0 : description.split("\n")) != null ? _a : [];
+  if (deprecatedMessage === void 0) {
+    return lines.length === 0 ? void 0 : lines.join("\n");
+  }
+  if (lines.length === 0) {
+    return `Deprecated: ${deprecatedMessage}`;
+  }
+  return [...lines, "", `Deprecated: ${deprecatedMessage}`].join("\n");
+}
+__name(buildDescription, "buildDescription");
+
+// src/json-schema-refs.ts
+function createDefinitionRef(name) {
+  return `#/$defs/${name}`;
+}
+__name(createDefinitionRef, "createDefinitionRef");
+
+// src/json-schema-sort.ts
+function sortStrings(values) {
+  return [...values].sort((left, right) => {
+    return left.localeCompare(right);
+  });
+}
+__name(sortStrings, "sortStrings");
+function sortRecord(record) {
+  const sortedRecord = {};
+  for (const key of sortStrings(Object.keys(record))) {
+    sortedRecord[key] = record[key];
+  }
+  return sortedRecord;
+}
+__name(sortRecord, "sortRecord");
+
+// src/json-schema-convert.ts
+function buildDefinitions(ir) {
+  const definitions = {};
+  for (const enumDef of ir.enums) {
+    definitions[enumDef.name] = buildEnumSchema(enumDef);
+  }
+  for (const typeDef of ir.types) {
+    definitions[typeDef.name] = withSchemaMetadata(
+      buildTypeRefSchema(typeDef.typeRef),
+      typeDef.doc,
+      typeDef.annotations
+    );
+  }
+  return sortRecord(definitions);
+}
+__name(buildDefinitions, "buildDefinitions");
+function buildEnumSchema(enumDef) {
+  return withSchemaMetadata(
+    {
+      type: enumDef.enumType === "int" ? "integer" : "string",
+      enum: enumDef.members.map((member) => unwrapLiteral(member.value))
+    },
+    enumDef.doc,
+    enumDef.annotations
+  );
+}
+__name(buildEnumSchema, "buildEnumSchema");
+function buildTypeRefSchema(typeRef) {
+  var _a, _b, _c, _d, _e, _f, _g;
+  switch (typeRef.kind) {
+    case "primitive":
+      return buildPrimitiveSchema((_a = typeRef.primitiveName) != null ? _a : "string");
+    case "type":
+      return { $ref: createDefinitionRef((_b = typeRef.typeName) != null ? _b : "") };
+    case "enum":
+      return { $ref: createDefinitionRef((_c = typeRef.enumName) != null ? _c : "") };
+    case "array": {
+      let schema = {
+        type: "array",
+        items: buildTypeRefSchema(
+          (_d = typeRef.arrayType) != null ? _d : { kind: "primitive", primitiveName: "string" }
+        )
+      };
+      for (let dimension = 1; dimension < ((_e = typeRef.arrayDims) != null ? _e : 1); dimension += 1) {
+        schema = {
+          type: "array",
+          items: schema
+        };
+      }
+      return schema;
+    }
+    case "map":
+      return {
+        type: "object",
+        additionalProperties: buildTypeRefSchema(
+          (_f = typeRef.mapType) != null ? _f : { kind: "primitive", primitiveName: "string" }
+        )
+      };
+    case "object":
+      return buildObjectSchema((_g = typeRef.objectFields) != null ? _g : []);
+  }
+}
+__name(buildTypeRefSchema, "buildTypeRefSchema");
+function buildPrimitiveSchema(primitiveName) {
+  switch (primitiveName) {
+    case "int":
+      return { type: "integer" };
+    case "float":
+      return { type: "number" };
+    case "bool":
+      return { type: "boolean" };
+    case "datetime":
+      return { type: "string", format: "date-time" };
+    default:
+      return { type: "string" };
+  }
+}
+__name(buildPrimitiveSchema, "buildPrimitiveSchema");
+function buildObjectSchema(fields) {
+  const properties = {};
+  const required = [];
+  for (const field of fields) {
+    properties[field.name] = withSchemaMetadata(
+      buildTypeRefSchema(field.typeRef),
+      field.doc,
+      field.annotations
+    );
+    if (!field.optional) {
+      required.push(field.name);
+    }
+  }
+  const schema = {
+    type: "object",
+    properties: sortRecord(properties)
+  };
+  if (required.length > 0) {
+    schema.required = sortStrings(required);
+  }
+  return schema;
+}
+__name(buildObjectSchema, "buildObjectSchema");
 
 // node_modules/@varavel/vdl-plugin-sdk/dist/utils/strings/fuzzy-search.js
 var MAX_FUZZY_RESULTS = 3;
@@ -295,27 +475,29 @@ function boundedDamerauLevenshtein(left, right, maxDistance) {
 }
 __name(boundedDamerauLevenshtein, "boundedDamerauLevenshtein");
 
-// src/json-schema.ts
-var JSON_SCHEMA_DRAFT = "https://json-schema.org/draft/2020-12/schema";
-var OUTPUT_PATH = "schema.json";
-function generateFunc(input) {
-  const document = buildJsonSchemaDocument(input);
-  if ("error" in document) {
-    return {
-      errors: [{ message: document.error }]
-    };
-  }
-  return {
-    files: [
-      {
-        path: OUTPUT_PATH,
-        content: `${JSON.stringify(document, null, 2)}
-`
-      }
-    ]
-  };
+// src/json-schema-errors.ts
+function buildMissingRootError(definitionNames, root) {
+  const suggestions = fuzzySearch(definitionNames, root).matches;
+  const suggestionSuffix = suggestions.length === 0 ? "" : ` Did you mean ${formatSuggestions(suggestions)}?`;
+  return `Root type "${root}" was not found in the generated schema definitions.${suggestionSuffix}`;
 }
-__name(generateFunc, "generateFunc");
+__name(buildMissingRootError, "buildMissingRootError");
+function formatSuggestions(suggestions) {
+  if (suggestions.length === 1) {
+    return `"${suggestions[0]}"`;
+  }
+  if (suggestions.length === 2) {
+    return `"${suggestions[0]}" or "${suggestions[1]}"`;
+  }
+  const head = suggestions.slice(0, -1).map((suggestion) => {
+    return `"${suggestion}"`;
+  });
+  const tail = `"${suggestions[suggestions.length - 1]}"`;
+  return `${head.join(", ")}, or ${tail}`;
+}
+__name(formatSuggestions, "formatSuggestions");
+
+// src/json-schema-document.ts
 function buildJsonSchemaDocument(input) {
   const id = getOptionString(input.options, "id", "");
   const root = getOptionString(input.options, "root", "");
@@ -338,150 +520,26 @@ function buildJsonSchemaDocument(input) {
   return document;
 }
 __name(buildJsonSchemaDocument, "buildJsonSchemaDocument");
-function buildDefinitions(ir) {
-  const definitions = {};
-  for (const enumDef of ir.enums) {
-    definitions[enumDef.name] = buildEnumSchema(enumDef);
+
+// src/json-schema-generate.ts
+function generateFunc(input) {
+  const document = buildJsonSchemaDocument(input);
+  if ("error" in document) {
+    return {
+      errors: [{ message: document.error }]
+    };
   }
-  for (const typeDef of ir.types) {
-    definitions[typeDef.name] = withDescription(
-      buildTypeRefSchema(typeDef.typeRef),
-      typeDef.doc
-    );
-  }
-  return sortRecord(definitions);
-}
-__name(buildDefinitions, "buildDefinitions");
-function buildEnumSchema(enumDef) {
-  return withDescription(
-    {
-      type: enumDef.enumType === "int" ? "integer" : "string",
-      enum: enumDef.members.map((member) => unwrapLiteral(member.value))
-    },
-    enumDef.doc
-  );
-}
-__name(buildEnumSchema, "buildEnumSchema");
-function buildTypeRefSchema(typeRef) {
-  var _a, _b, _c, _d, _e, _f, _g;
-  switch (typeRef.kind) {
-    case "primitive":
-      return buildPrimitiveSchema((_a = typeRef.primitiveName) != null ? _a : "string");
-    case "type":
-      return { $ref: createDefinitionRef((_b = typeRef.typeName) != null ? _b : "") };
-    case "enum":
-      return { $ref: createDefinitionRef((_c = typeRef.enumName) != null ? _c : "") };
-    case "array": {
-      let schema = {
-        type: "array",
-        items: buildTypeRefSchema(
-          (_d = typeRef.arrayType) != null ? _d : { kind: "primitive", primitiveName: "string" }
-        )
-      };
-      for (let dimension = 1; dimension < ((_e = typeRef.arrayDims) != null ? _e : 1); dimension += 1) {
-        schema = {
-          type: "array",
-          items: schema
-        };
+  return {
+    files: [
+      {
+        path: OUTPUT_PATH,
+        content: `${JSON.stringify(document, null, 2)}
+`
       }
-      return schema;
-    }
-    case "map":
-      return {
-        type: "object",
-        additionalProperties: buildTypeRefSchema(
-          (_f = typeRef.mapType) != null ? _f : { kind: "primitive", primitiveName: "string" }
-        )
-      };
-    case "object":
-      return buildObjectSchema((_g = typeRef.objectFields) != null ? _g : []);
-  }
-}
-__name(buildTypeRefSchema, "buildTypeRefSchema");
-function buildPrimitiveSchema(primitiveName) {
-  switch (primitiveName) {
-    case "int":
-      return { type: "integer" };
-    case "float":
-      return { type: "number" };
-    case "bool":
-      return { type: "boolean" };
-    case "datetime":
-      return { type: "string", format: "date-time" };
-    default:
-      return { type: "string" };
-  }
-}
-__name(buildPrimitiveSchema, "buildPrimitiveSchema");
-function buildObjectSchema(fields) {
-  const properties = {};
-  const required = [];
-  for (const field of fields) {
-    properties[field.name] = withDescription(
-      buildTypeRefSchema(field.typeRef),
-      field.doc
-    );
-    if (!field.optional) {
-      required.push(field.name);
-    }
-  }
-  const schema = {
-    type: "object",
-    properties: sortRecord(properties)
+    ]
   };
-  if (required.length > 0) {
-    schema.required = sortStrings(required);
-  }
-  return schema;
 }
-__name(buildObjectSchema, "buildObjectSchema");
-function withDescription(schema, description) {
-  if (description === void 0 || description === "") {
-    return schema;
-  }
-  return __spreadProps(__spreadValues({}, schema), {
-    description
-  });
-}
-__name(withDescription, "withDescription");
-function buildMissingRootError(definitionNames, root) {
-  const suggestions = fuzzySearch(definitionNames, root).matches;
-  const suggestionSuffix = suggestions.length === 0 ? "" : ` Did you mean ${formatSuggestions(suggestions)}?`;
-  return `Root type "${root}" was not found in the generated schema definitions.${suggestionSuffix}`;
-}
-__name(buildMissingRootError, "buildMissingRootError");
-function formatSuggestions(suggestions) {
-  if (suggestions.length === 1) {
-    return `"${suggestions[0]}"`;
-  }
-  if (suggestions.length === 2) {
-    return `"${suggestions[0]}" or "${suggestions[1]}"`;
-  }
-  const head = suggestions.slice(0, -1).map((suggestion) => {
-    return `"${suggestion}"`;
-  });
-  const tail = `"${suggestions[suggestions.length - 1]}"`;
-  return `${head.join(", ")}, or ${tail}`;
-}
-__name(formatSuggestions, "formatSuggestions");
-function createDefinitionRef(name) {
-  return `#/$defs/${name}`;
-}
-__name(createDefinitionRef, "createDefinitionRef");
-function sortRecord(record) {
-  const sortedRecord = {};
-  for (const key of sortStrings(Object.keys(record))) {
-    sortedRecord[key] = record[key];
-  }
-  return sortedRecord;
-}
-__name(sortRecord, "sortRecord");
-function sortStrings(values) {
-  return [...values].sort((left, right) => {
-    return left.localeCompare(right);
-  });
-}
-__name(sortStrings, "sortStrings");
+__name(generateFunc, "generateFunc");
 
 // src/index.ts
 var generate = definePlugin((input) => {
