@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "OrderStatus": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "processing",
+        "shipped",
+        "delivered"
+      ],
+      "description": "Status of an order."
+    },
+    "Priority": {
+      "type": "integer",
+      "enum": [
+        1,
+        2,
+        3
+      ],
+      "description": "Priority levels."
+    },
+    "Product": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/ProductId"
+        },
+        "matrix": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "name": {
+          "type": "string"
+        },
+        "price": {
+          "type": "number"
+        },
+        "priority": {
+          "$ref": "#/$defs/Priority"
+        },
+        "status": {
+          "$ref": "#/$defs/OrderStatus"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "price",
+        "priority",
+        "status"
+      ]
+    },
+    "ProductCatalog": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Product"
+      }
+    },
+    "ProductEnvelope": {
+      "type": "object",
+      "properties": {
+        "generatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "items": {
+          "$ref": "#/$defs/ProductCatalog"
+        },
+        "lookup": {
+          "$ref": "#/$defs/ProductLookup"
+        }
+      },
+      "required": [
+        "generatedAt",
+        "items",
+        "lookup"
+      ]
+    },
+    "ProductId": {
+      "type": "string"
+    },
+    "ProductLookup": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/Product"
+      }
+    }
+  }
+}

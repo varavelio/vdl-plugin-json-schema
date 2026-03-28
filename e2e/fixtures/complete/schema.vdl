@@ -1,0 +1,37 @@
+""" Status of an order. """
+enum OrderStatus {
+  Pending = "pending"
+  Processing = "processing"
+  Shipped = "shipped"
+  Delivered = "delivered"
+}
+
+""" Priority levels. """
+enum Priority {
+  Low = 1
+  Medium = 2
+  High = 3
+}
+
+type ProductId string
+
+type Product {
+  id ProductId
+  name string
+  price float
+  status OrderStatus
+  priority Priority
+  tags? string[]
+  metadata? map[string]
+  matrix? float[][]
+}
+
+type ProductCatalog Product[]
+
+type ProductLookup map[Product]
+
+type ProductEnvelope {
+  items ProductCatalog
+  lookup ProductLookup
+  generatedAt datetime
+}
