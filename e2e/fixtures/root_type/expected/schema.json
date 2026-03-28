@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "Config": {
+      "type": "object",
+      "properties": {
+        "debug": {
+          "type": "boolean"
+        },
+        "maxRetries": {
+          "type": "integer"
+        },
+        "settings": {
+          "$ref": "#/$defs/Settings"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "debug",
+        "maxRetries",
+        "settings",
+        "version"
+      ]
+    },
+    "Settings": {
+      "type": "object",
+      "properties": {
+        "language": {
+          "type": "string"
+        },
+        "theme": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "language",
+        "theme"
+      ]
+    }
+  },
+  "$id": "https://example.com/root-type.schema.json",
+  "$ref": "#/$defs/Config"
+}

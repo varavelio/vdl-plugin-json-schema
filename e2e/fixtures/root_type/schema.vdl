@@ -1,0 +1,11 @@
+type Settings {
+  theme string
+  language string
+}
+
+type Config {
+  debug bool
+  maxRetries int
+  settings Settings
+  version string
+}
