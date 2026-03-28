@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "Order": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "priority": {
+          "$ref": "#/$defs/Priority"
+        },
+        "status": {
+          "$ref": "#/$defs/OrderStatus"
+        }
+      },
+      "required": [
+        "id",
+        "priority",
+        "status"
+      ]
+    },
+    "OrderStatus": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "processing",
+        "shipped"
+      ],
+      "description": "Status of an order."
+    },
+    "Priority": {
+      "type": "integer",
+      "enum": [
+        1,
+        2,
+        3
+      ],
+      "description": "Priority levels."
+    }
+  }
+}

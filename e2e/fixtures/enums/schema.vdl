@@ -1,0 +1,19 @@
+""" Status of an order. """
+enum OrderStatus {
+  Pending = "pending"
+  Processing = "processing"
+  Shipped = "shipped"
+}
+
+""" Priority levels. """
+enum Priority {
+  Low = 1
+  Medium = 2
+  High = 3
+}
+
+type Order {
+  id string
+  priority Priority
+  status OrderStatus
+}
