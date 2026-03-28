@@ -6,7 +6,7 @@ export const JSON_SCHEMA_DRAFT = "https://json-schema.org/draft/2020-12/schema";
 /**
  * Relative output file path returned to VDL.
  */
-export const OUTPUT_PATH = "schema.json";
+export const DEFAULT_OUTPUT_PATH = "schema.json";
 
 /**
  * Fallback message used when `@deprecated` has no explicit reason.

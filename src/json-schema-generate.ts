@@ -1,6 +1,7 @@
 import type { PluginInput, PluginOutput } from "@varavel/vdl-plugin-sdk";
+import { getOptionString } from "@varavel/vdl-plugin-sdk/utils/options";
 
-import { OUTPUT_PATH } from "./json-schema-constants.js";
+import { DEFAULT_OUTPUT_PATH } from "./json-schema-constants.js";
 import { buildJsonSchemaDocument } from "./json-schema-document.js";
 
 /**
@@ -8,6 +9,11 @@ import { buildJsonSchemaDocument } from "./json-schema-document.js";
  */
 export function generateFunc(input: PluginInput): PluginOutput {
   const document = buildJsonSchemaDocument(input);
+  const outFile = getOptionString(
+    input.options,
+    "outFile",
+    DEFAULT_OUTPUT_PATH,
+  );
 
   if ("error" in document) {
     return {
@@ -18,7 +24,7 @@ export function generateFunc(input: PluginInput): PluginOutput {
   return {
     files: [
       {
-        path: OUTPUT_PATH,
+        path: outFile === "" ? DEFAULT_OUTPUT_PATH : outFile,
         content: `${JSON.stringify(document, null, 2)}\n`,
       },
     ],

@@ -391,7 +391,7 @@ describe("buildJsonSchemaDocument", () => {
 });
 
 describe("generateFunc", () => {
-  it("returns a generated schema file", () => {
+  it("returns a generated schema file using the default output path", () => {
     const output = generateFunc(
       pluginInput({
         ir: schema({
@@ -422,6 +422,25 @@ describe("generateFunc", () => {
   }
 }
 `);
+  });
+
+  it("uses a custom output file when outFile is provided", () => {
+    const output = generateFunc(
+      pluginInput({
+        options: {
+          outFile: "custom-schema.json",
+        },
+        ir: schema({
+          types: [
+            typeDef("Health", objectType([field("ok", primitiveType("bool"))])),
+          ],
+        }),
+      }),
+    );
+
+    expect(output.errors).toBeUndefined();
+    expect(output.files).toHaveLength(1);
+    expect(output.files?.[0]?.path).toBe("custom-schema.json");
   });
 
   it("returns plugin errors instead of files when the root is invalid", () => {
