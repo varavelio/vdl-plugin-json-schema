@@ -1,4 +1,5 @@
 import type {
+  Annotation,
   EnumDef,
   Field,
   IrSchema,
@@ -6,12 +7,18 @@ import type {
   PluginOutput,
   TypeRef,
 } from "@varavel/vdl-plugin-sdk";
-import { unwrapLiteral } from "@varavel/vdl-plugin-sdk/utils/ir";
+import {
+  getAnnotation,
+  getAnnotationArg,
+  unwrapLiteral,
+} from "@varavel/vdl-plugin-sdk/utils/ir";
 import { getOptionString } from "@varavel/vdl-plugin-sdk/utils/options";
 import { fuzzySearch } from "@varavel/vdl-plugin-sdk/utils/strings";
 
 const JSON_SCHEMA_DRAFT = "https://json-schema.org/draft/2020-12/schema";
 const OUTPUT_PATH = "schema.json";
+const DEFAULT_DEPRECATED_MESSAGE =
+  "This schema element is deprecated and should not be used in new code.";
 
 type JsonSchema = Record<string, unknown>;
 type JsonSchemaDefinitions = Record<string, JsonSchema>;
@@ -97,9 +104,10 @@ function buildDefinitions(ir: IrSchema): JsonSchemaDefinitions {
   }
 
   for (const typeDef of ir.types) {
-    definitions[typeDef.name] = withDescription(
+    definitions[typeDef.name] = withSchemaMetadata(
       buildTypeRefSchema(typeDef.typeRef),
       typeDef.doc,
+      typeDef.annotations,
     );
   }
 
@@ -113,12 +121,13 @@ function buildDefinitions(ir: IrSchema): JsonSchemaDefinitions {
  * array contains plain JSON values.
  */
 function buildEnumSchema(enumDef: EnumDef): JsonSchema {
-  return withDescription(
+  return withSchemaMetadata(
     {
       type: enumDef.enumType === "int" ? "integer" : "string",
       enum: enumDef.members.map((member) => unwrapLiteral(member.value)),
     },
     enumDef.doc,
+    enumDef.annotations,
   );
 }
 
@@ -200,9 +209,10 @@ function buildObjectSchema(fields: Field[]): JsonSchema {
   const required: string[] = [];
 
   for (const field of fields) {
-    properties[field.name] = withDescription(
+    properties[field.name] = withSchemaMetadata(
       buildTypeRefSchema(field.typeRef),
       field.doc,
+      field.annotations,
     );
 
     if (!field.optional) {
@@ -223,20 +233,76 @@ function buildObjectSchema(fields: Field[]): JsonSchema {
 }
 
 /**
- * Attaches a description to a schema fragment when documentation is present.
+ * Enriches a schema fragment with documentation and deprecation metadata.
  *
- * Returning the original object when no description exists keeps the emitted
- * output minimal and avoids unnecessary object copies.
+ * The description text combines regular docs and deprecation notes in a single
+ * place so generated schemas remain readable in tooling that only surfaces the
+ * `description` field.
  */
-function withDescription(schema: JsonSchema, description?: string): JsonSchema {
-  if (description === undefined || description === "") {
-    return schema;
+function withSchemaMetadata(
+  schema: JsonSchema,
+  description?: string,
+  annotations?: Annotation[],
+): JsonSchema {
+  const deprecatedMessage = getDeprecatedMessage(annotations);
+  const fullDescription = buildDescription(description, deprecatedMessage);
+
+  const nextSchema: JsonSchema = {
+    ...schema,
+  };
+
+  if (fullDescription !== undefined) {
+    nextSchema.description = fullDescription;
   }
 
-  return {
-    ...schema,
-    description,
-  };
+  if (deprecatedMessage !== undefined) {
+    nextSchema.deprecated = true;
+  }
+
+  return nextSchema;
+}
+
+/**
+ * Extracts the effective deprecation message from an annotation list.
+ */
+function getDeprecatedMessage(
+  annotations: Annotation[] | undefined,
+): string | undefined {
+  const deprecated = getAnnotation(annotations, "deprecated");
+
+  if (deprecated === undefined) {
+    return undefined;
+  }
+
+  const argument = getAnnotationArg(annotations, "deprecated");
+  const unwrapped =
+    argument !== undefined ? unwrapLiteral<unknown>(argument) : undefined;
+
+  if (typeof unwrapped === "string" && unwrapped.trim().length > 0) {
+    return unwrapped;
+  }
+
+  return DEFAULT_DEPRECATED_MESSAGE;
+}
+
+/**
+ * Builds the final description payload from optional docs and deprecation.
+ */
+function buildDescription(
+  description: string | undefined,
+  deprecatedMessage: string | undefined,
+): string | undefined {
+  const lines = description?.split("\n") ?? [];
+
+  if (deprecatedMessage === undefined) {
+    return lines.length === 0 ? undefined : lines.join("\n");
+  }
+
+  if (lines.length === 0) {
+    return `Deprecated: ${deprecatedMessage}`;
+  }
+
+  return [...lines, "", `Deprecated: ${deprecatedMessage}`].join("\n");
 }
 
 /**

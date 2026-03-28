@@ -1,4 +1,5 @@
 import {
+  annotation,
   arrayType,
   enumDef,
   enumMember,
@@ -320,6 +321,71 @@ describe("buildJsonSchemaDocument", () => {
     expect(buildJsonSchemaDocument(pluginInput())).toEqual({
       $schema: "https://json-schema.org/draft/2020-12/schema",
       $defs: {},
+    });
+  });
+
+  it("adds deprecated metadata and deprecation notes in descriptions", () => {
+    const input = pluginInput({
+      ir: schema({
+        enums: [
+          enumDef(
+            "LegacyStatus",
+            "string",
+            [enumMember("Old", stringLiteral("old"))],
+            {
+              doc: "Legacy status enum.",
+              annotations: [
+                annotation("deprecated", stringLiteral("Use Status instead.")),
+              ],
+            },
+          ),
+        ],
+        types: [
+          typeDef(
+            "LegacyUser",
+            objectType([
+              field("name", primitiveType("string"), {
+                annotations: [annotation("deprecated")],
+              }),
+              field("status", enumType("LegacyStatus", "string")),
+            ]),
+            {
+              doc: "Legacy user payload.",
+              annotations: [annotation("deprecated")],
+            },
+          ),
+        ],
+      }),
+    });
+
+    expect(buildJsonSchemaDocument(input)).toEqual({
+      $schema: "https://json-schema.org/draft/2020-12/schema",
+      $defs: {
+        LegacyStatus: {
+          type: "string",
+          enum: ["old"],
+          description: "Legacy status enum.\n\nDeprecated: Use Status instead.",
+          deprecated: true,
+        },
+        LegacyUser: {
+          type: "object",
+          properties: {
+            name: {
+              type: "string",
+              description:
+                "Deprecated: This schema element is deprecated and should not be used in new code.",
+              deprecated: true,
+            },
+            status: {
+              $ref: "#/$defs/LegacyStatus",
+            },
+          },
+          required: ["name", "status"],
+          description:
+            "Legacy user payload.\n\nDeprecated: This schema element is deprecated and should not be used in new code.",
+          deprecated: true,
+        },
+      },
     });
   });
 });
