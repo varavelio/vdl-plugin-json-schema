@@ -1,5 +1,5 @@
 {
-  "name": "vdl-plugin-template",
+  "name": "@varavel/vdl-plugin-json-schema",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -23,6 +23,8 @@
     "@varavel/gen": "0.1.0",
     "@varavel/vdl": "0.5.0-alpha.5",
     "@varavel/vdl-plugin-sdk": "0.3.1",
+    "ajv-cli": "5.0.0",
+    "ajv-formats": "3.0.1",
     "dprint": "0.52.0",
     "typescript": "5.9.3",
     "vitest": "4.0.18"
