@@ -3,6 +3,25 @@ import { existsSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
+// This helper runs the `ajv` CLI to validate that a given JSON schema file is a valid
+function assertValidJsonSchema(schemaPath: string): void {
+  execFileSync(
+    "npx",
+    [
+      "ajv",
+      "compile",
+      "-s",
+      schemaPath,
+      "--spec=draft2020",
+      "-c",
+      "ajv-formats",
+    ],
+    {
+      stdio: "pipe",
+    },
+  );
+}
+
 // Each fixture directory represents a standalone VDL project configured to run
 // this plugin exactly as a user would run it from the command line.
 const fixturesDir = resolve(__dirname, "fixtures");
@@ -72,6 +91,7 @@ describe("VDL Plugin JSON Schema end-to-end", () => {
       );
 
       if (fileName.endsWith(".json")) {
+        assertValidJsonSchema(join(outDir, fileName));
         expect(JSON.parse(generatedContent)).toEqual(
           JSON.parse(expectedContent),
         );
