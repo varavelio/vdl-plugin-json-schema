@@ -12,6 +12,15 @@
   Generate JSON Schema Draft 2020-12 from VDL <strong>types</strong> and <strong>enums</strong>.
 </p>
 
+<p align="center">
+  <a href="https://varavel.com">
+    <img src="https://cdn.jsdelivr.net/gh/varavelio/brand@1.0.0/dist/badges/project.svg" alt="A Varavel project"/>
+  </a>
+  <a href="https://varavel.com/vdl">
+    <img src="https://cdn.jsdelivr.net/gh/varavelio/brand@1.0.0/dist/badges/vdl-plugin.svg" alt="VDL Plugin"/>
+  </a>
+</p>
+
 This plugin converts your VDL schema into a standard `schema.json` file that can be consumed by validators, documentation tools, form builders, API gateways, and any platform that understands JSON Schema.
 
 It is focused on data models only.
