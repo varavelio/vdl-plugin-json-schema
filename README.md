@@ -47,7 +47,7 @@ const config = {
   version 1
   plugins [
     {
-      src "varavelio/vdl-plugin-json-schema@v0.1.0"
+      src "varavelio/vdl-plugin-json-schema@<version>" // Use a version from plugin releases
       schema "./schema.vdl"
       outDir "./gen"
     }
@@ -84,7 +84,7 @@ const config = {
   version 1
   plugins [
     {
-      src "varavelio/vdl-plugin-json-schema@v0.1.0"
+      src "varavelio/vdl-plugin-json-schema@<version>" // Use a version from plugin releases
       schema "./schema.vdl"
       outDir "./gen"
       options {
@@ -153,7 +153,7 @@ const config = {
   version 1
   plugins [
     {
-      src "varavelio/vdl-plugin-json-schema@v0.1.0"
+      src "varavelio/vdl-plugin-json-schema@<version>" // Use a version from plugin releases
       schema "./schema.vdl"
       outDir "./gen"
       options {
