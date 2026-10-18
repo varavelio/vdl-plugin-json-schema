@@ -1,7 +1,7 @@
 {
   "name": "@varavel/vdl-plugin-json-schema",
-  "private": true,
   "version": "0.0.0",
+  "private": true,
   "type": "module",
   "scripts": {
     "build": "vdl-plugin build",
@@ -18,15 +18,15 @@
     "ci": "npm run build && npm run lint && npm run check && npm run test"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.4.6",
-    "@types/node": "25.4.0",
+    "@biomejs/biome": "2.5.15",
+    "@types/node": "26.6.5",
     "@varavel/gen": "0.1.0",
-    "@varavel/vdl": "0.5.0-alpha.5",
-    "@varavel/vdl-plugin-sdk": "0.3.1",
+    "@varavel/vdl": "0.5.0",
+    "@varavel/vdl-plugin-sdk": "0.6.0",
     "ajv-cli": "5.0.0",
     "ajv-formats": "3.0.1",
-    "dprint": "0.52.0",
-    "typescript": "5.9.3",
-    "vitest": "4.0.18"
+    "dprint": "0.63.0",
+    "typescript": "7.0.2",
+    "vitest": "5.0.5"
   }
 }

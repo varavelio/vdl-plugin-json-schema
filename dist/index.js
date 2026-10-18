@@ -39,11 +39,39 @@ __export(index_exports, {
 });
 module.exports = __toCommonJS(index_exports);
 
+// node_modules/@varavel/vdl-plugin-sdk/dist/core/errors.js
+var _a;
+var PluginError = (_a = class extends Error {
+  constructor(message, position) {
+    super(message);
+    this.name = "PluginError";
+    this.position = position;
+  }
+}, __name(_a, "PluginError"), _a);
+
 // node_modules/@varavel/vdl-plugin-sdk/dist/core/define-plugin.js
 function definePlugin(handler) {
-  return handler;
+  return (input) => {
+    try {
+      return handler(input);
+    } catch (error) {
+      return {
+        files: [],
+        errors: [toPluginError(error)]
+      };
+    }
+  };
 }
 __name(definePlugin, "definePlugin");
+function toPluginError(error) {
+  if (error instanceof PluginError) return {
+    message: error.message,
+    position: error.position
+  };
+  if (error instanceof Error) return { message: error.message };
+  return { message: "An unknown generation error occurred." };
+}
+__name(toPluginError, "toPluginError");
 
 // node_modules/@varavel/vdl-plugin-sdk/dist/utils/options/get-option-string.js
 function getOptionString(options, key, defaultValue) {
@@ -130,8 +158,8 @@ function getDeprecatedMessage(annotations) {
 }
 __name(getDeprecatedMessage, "getDeprecatedMessage");
 function buildDescription(description, deprecatedMessage) {
-  var _a;
-  const lines = (_a = description == null ? void 0 : description.split("\n")) != null ? _a : [];
+  var _a2;
+  const lines = (_a2 = description == null ? void 0 : description.split("\n")) != null ? _a2 : [];
   if (deprecatedMessage === void 0) {
     return lines.length === 0 ? void 0 : lines.join("\n");
   }
@@ -192,10 +220,10 @@ function buildEnumSchema(enumDef) {
 }
 __name(buildEnumSchema, "buildEnumSchema");
 function buildTypeRefSchema(typeRef) {
-  var _a, _b, _c, _d, _e, _f, _g;
+  var _a2, _b, _c, _d, _e, _f, _g;
   switch (typeRef.kind) {
     case "primitive":
-      return buildPrimitiveSchema((_a = typeRef.primitiveName) != null ? _a : "string");
+      return buildPrimitiveSchema((_a2 = typeRef.primitiveName) != null ? _a2 : "string");
     case "type":
       return { $ref: createDefinitionRef((_b = typeRef.typeName) != null ? _b : "") };
     case "enum":
@@ -268,14 +296,6 @@ __name(buildObjectSchema, "buildObjectSchema");
 
 // node_modules/@varavel/vdl-plugin-sdk/dist/utils/strings/fuzzy-search.js
 var MAX_FUZZY_RESULTS = 3;
-var MatchKind = /* @__PURE__ */ (function(MatchKind2) {
-  MatchKind2[MatchKind2["Exact"] = 0] = "Exact";
-  MatchKind2[MatchKind2["Prefix"] = 1] = "Prefix";
-  MatchKind2[MatchKind2["Suffix"] = 2] = "Suffix";
-  MatchKind2[MatchKind2["Contains"] = 3] = "Contains";
-  MatchKind2[MatchKind2["Edit"] = 4] = "Edit";
-  return MatchKind2;
-})(MatchKind || {});
 var COMBINING_MARK_SEQUENCE_RE = createCombiningMarkSequenceRegex();
 var HAS_FULL_UNICODE_NORMALIZE = supportsUnicodeNormalize();
 var BASIC_DIACRITIC_REPLACEMENTS = [
@@ -318,7 +338,7 @@ function fuzzySearch(data, query) {
 __name(fuzzySearch, "fuzzySearch");
 function createCombiningMarkSequenceRegex() {
   try {
-    const candidate = /* @__PURE__ */ new RegExp("\\p{M}+", "gu");
+    const candidate = new RegExp("\\p{M}+", "gu");
     if (candidate.test("\u0301")) {
       candidate.lastIndex = 0;
       return candidate;
@@ -363,28 +383,28 @@ function evaluateMatch(word, index, normalizedQuery, queryCodePoints, queryLengt
   const lengthDifference = Math.abs(queryLength - length);
   if (normalized === normalizedQuery) return {
     word,
-    kind: MatchKind.Exact,
+    kind: 0,
     distance: 0,
     lengthDifference: 0,
     index
   };
   if (normalized.startsWith(normalizedQuery)) return {
     word,
-    kind: MatchKind.Prefix,
+    kind: 1,
     distance: 0,
     lengthDifference,
     index
   };
   if (normalized.endsWith(normalizedQuery)) return {
     word,
-    kind: MatchKind.Suffix,
+    kind: 2,
     distance: 0,
     lengthDifference,
     index
   };
   if (normalized.includes(normalizedQuery)) return {
     word,
-    kind: MatchKind.Contains,
+    kind: 3,
     distance: 0,
     lengthDifference,
     index
@@ -394,7 +414,7 @@ function evaluateMatch(word, index, normalizedQuery, queryCodePoints, queryLengt
   if (distance > maxDistance) return null;
   return {
     word,
-    kind: MatchKind.Edit,
+    kind: 4,
     distance,
     lengthDifference,
     index

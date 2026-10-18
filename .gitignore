@@ -24,3 +24,6 @@ coverage
 # IDE/Tools
 .vscode-test
 .eslintcache
+
+# TypeScript
+*.tsbuildinfo
