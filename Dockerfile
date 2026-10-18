@@ -22,7 +22,7 @@ RUN set -e && \
     # Git config
     git config --system --add safe.directory '*'
 
-WORKDIR /workspaces/vdl-plugin-http-rpc-openapi
+WORKDIR /workspaces/vdl-plugin-json-schema
 
 ################
 # DEVCONTAINER #

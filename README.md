@@ -31,6 +31,8 @@ This plugin converts your VDL schema into a standard `schema.json` file that can
 
 It is focused on data models only.
 
+Only `type` and `enum` definitions are emitted. Constants are ignored, an empty schema produces an empty `$defs` object, and an empty object keeps an explicit `"properties": {}`. Definition names are the `$defs` keys; no separate `title` field is added.
+
 Use it when you want to:
 
 - validate JSON payloads outside generated SDKs

@@ -25,3 +25,4 @@ When updating this document, do so with the context of the entire document in mi
 - Validate all plugin options centrally so typos and invalid values fail fast with friendly errors.
 - Emit document keys in `$schema`, `$id`, `$ref`, `$defs` order.
 - `e2e/` contains fixture-driven end-to-end tests. Keep one fixture folder per scenario, use `expected/` for successful generated files, and use `expected-error.txt` for fixtures that must fail with a friendly plugin error.
+- Releases ship via git tags, not npm: keep `version` at `0.0.0` with `private: true` and the rebuilt `dist/index.js` is always commited.
