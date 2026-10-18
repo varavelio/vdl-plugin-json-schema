@@ -22,4 +22,6 @@ When updating this document, do so with the context of the entire document in mi
 - Use the SDK utility functions when possible to avoid duplicating code.
 - The plugin only cares about JSON Schema generation for enums and types already validated by VDL. Prefer direct transformations from the IR over extra abstraction.
 - The generated output filename is configurable through the `outFile` plugin option; keep code, docs, and fixture expectations aligned with that behavior.
+- Validate all plugin options centrally so typos and invalid values fail fast with friendly errors.
+- Emit document keys in `$schema`, `$id`, `$ref`, `$defs` order.
 - `e2e/` contains fixture-driven end-to-end tests. Keep one fixture folder per scenario, use `expected/` for successful generated files, and use `expected-error.txt` for fixtures that must fail with a friendly plugin error.

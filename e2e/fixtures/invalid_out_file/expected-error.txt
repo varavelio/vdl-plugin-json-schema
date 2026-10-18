@@ -1,0 +1,1 @@
+Invalid "outFile" "schema.txt": the output file must end with ".json", for example "schema.json".

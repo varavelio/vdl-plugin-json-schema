@@ -464,3 +464,172 @@ describe("generateFunc", () => {
     ]);
   });
 });
+
+describe("document key order", () => {
+  it("emits keys in the conventional $schema, $id, $ref, $defs order", () => {
+    const document = buildJsonSchemaDocument(
+      pluginInput({
+        options: {
+          id: "https://example.com/config.schema.json",
+          root: "Config",
+        },
+        ir: schema({
+          types: [
+            typeDef(
+              "Config",
+              objectType([field("name", primitiveType("string"))]),
+            ),
+          ],
+        }),
+      }),
+    );
+
+    expect("error" in document).toBe(false);
+    expect(Object.keys(document)).toEqual(["$schema", "$id", "$ref", "$defs"]);
+  });
+
+  it("emits only $schema and $defs when id and root are omitted", () => {
+    const document = buildJsonSchemaDocument(pluginInput());
+
+    expect(Object.keys(document)).toEqual(["$schema", "$defs"]);
+  });
+});
+
+describe("plugin options validation", () => {
+  it("rejects unknown options with a suggestion", () => {
+    const document = buildJsonSchemaDocument(
+      pluginInput({
+        options: { rooot: "Config" },
+        ir: schema({
+          types: [
+            typeDef(
+              "Config",
+              objectType([field("name", primitiveType("string"))]),
+            ),
+          ],
+        }),
+      }),
+    );
+
+    expect(document).toEqual({
+      error:
+        'Unknown option "rooot". Supported options are "id", "outFile", "root". Did you mean "root"?',
+    });
+  });
+
+  it("rejects output files without a json extension", () => {
+    const output = generateFunc(
+      pluginInput({
+        options: { outFile: "schema.txt" },
+        ir: schema({
+          types: [
+            typeDef("Health", objectType([field("ok", primitiveType("bool"))])),
+          ],
+        }),
+      }),
+    );
+
+    expect(output.files).toBeUndefined();
+    expect(output.errors).toEqual([
+      {
+        message:
+          'Invalid "outFile" "schema.txt": the output file must end with ".json", for example "schema.json".',
+      },
+    ]);
+  });
+
+  it("rejects output files escaping outDir", () => {
+    const output = generateFunc(
+      pluginInput({
+        options: { outFile: "../evil.json" },
+        ir: schema({
+          types: [
+            typeDef("Health", objectType([field("ok", primitiveType("bool"))])),
+          ],
+        }),
+      }),
+    );
+
+    expect(output.files).toBeUndefined();
+    expect(output.errors?.[0]?.message).toContain('Invalid "outFile"');
+  });
+
+  it("rejects identifiers containing whitespace", () => {
+    const document = buildJsonSchemaDocument(
+      pluginInput({
+        options: { id: "not a uri" },
+        ir: schema({
+          types: [
+            typeDef("Health", objectType([field("ok", primitiveType("bool"))])),
+          ],
+        }),
+      }),
+    );
+
+    expect(document).toEqual({
+      error:
+        'Invalid "id" "not a uri": the schema identifier must not contain whitespace. Use a valid URI such as "https://example.com/schemas/schema.json".',
+    });
+  });
+
+  it("trims surrounding whitespace from option values", () => {
+    const document = buildJsonSchemaDocument(
+      pluginInput({
+        options: {
+          id: "  https://example.com/schema.json  ",
+          root: "  Config  ",
+        },
+        ir: schema({
+          types: [
+            typeDef(
+              "Config",
+              objectType([field("name", primitiveType("string"))]),
+            ),
+          ],
+        }),
+      }),
+    );
+
+    expect(document).toEqual({
+      $schema: "https://json-schema.org/draft/2020-12/schema",
+      $id: "https://example.com/schema.json",
+      $ref: "#/$defs/Config",
+      $defs: {
+        Config: {
+          type: "object",
+          properties: {
+            name: { type: "string" },
+          },
+          required: ["name"],
+        },
+      },
+    });
+  });
+
+  it("falls back to the default file for blank outFile values", () => {
+    const output = generateFunc(
+      pluginInput({
+        options: { outFile: "   " },
+        ir: schema({
+          types: [
+            typeDef("Health", objectType([field("ok", primitiveType("bool"))])),
+          ],
+        }),
+      }),
+    );
+
+    expect(output.errors).toBeUndefined();
+    expect(output.files?.[0]?.path).toBe("schema.json");
+  });
+
+  it("explains missing root entries when the schema has no definitions", () => {
+    const document = buildJsonSchemaDocument(
+      pluginInput({ options: { root: "Config" } }),
+    );
+
+    expect(document).toEqual({
+      error:
+        'Root type "Config" was not found: the schema contains no type or enum definitions. Add a type or enum to the schema or remove the "root" option.',
+    });
+  });
+});

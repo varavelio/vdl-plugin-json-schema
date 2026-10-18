@@ -97,10 +97,12 @@ const config = {
 }
 ```
 
+Option values are trimmed. An empty `id` or `root` is treated as unset, and a blank `outFile` falls back to `"schema.json"`. Unknown options fail with a friendly error listing the supported names. `outFile` must end with `.json` and stay inside `outDir` as a relative path without `..` segments. `id` must not contain whitespace.
+
 ## What You Get
 
-- A JSON Schema document using Draft 2020-12.
-- All top-level VDL types and enums emitted inside `$defs`.
+- A JSON Schema document using Draft 2020-12 with keys in the conventional `$schema`, `$id`, `$ref`, `$defs` order.
+- All top-level VDL types and enums emitted inside `$defs` with definitions, properties, and `required` fields sorted for stable output.
 - Stable `$ref` links between named types, aliases, and enums.
 - Object `required` fields generated only for non-optional VDL fields.
 - Support for nested objects, arrays, multidimensional arrays, and maps.
@@ -124,8 +126,8 @@ const config = {
 
 - If `root` is not set, the document contains reusable definitions in `$defs` and no top-level `$ref`.
 - If `root "Config"` is set, the document also includes `"$ref": "#/$defs/Config"`.
-- `root` can point to any generated top-level definition.
-- If the selected name does not exist, the plugin returns a clear error and, when possible, suggests a similar definition name.
+- `root` can point to any generated top-level definition. Surrounding whitespace is ignored.
+- If the selected name does not exist, the plugin returns a clear error and, when possible, suggests a similar definition name. When the schema has no definitions, the error explains that instead.
 
 ## Example
 
@@ -165,7 +167,7 @@ const config = {
 }
 ```
 
-Running `vdl generate` produces `./gen/product.schema.json` similar to:
+Running `vdl generate` produces `./gen/schema.json` similar to:
 
 ```json
 {

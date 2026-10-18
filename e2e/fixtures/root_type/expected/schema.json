@@ -1,5 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/root-type.schema.json",
+  "$ref": "#/$defs/Config",
   "$defs": {
     "Config": {
       "type": "object",
@@ -39,7 +41,5 @@
         "theme"
       ]
     }
-  },
-  "$id": "https://example.com/root-type.schema.json",
-  "$ref": "#/$defs/Config"
+  }
 }

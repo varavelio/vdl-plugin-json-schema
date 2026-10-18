@@ -1,5 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/circular-refs.schema.json",
+  "$ref": "#/$defs/CircularBundle",
   "$defs": {
     "CircularBundle": {
       "type": "object",
@@ -174,7 +176,5 @@
         "name"
       ]
     }
-  },
-  "$id": "https://example.com/circular-refs.schema.json",
-  "$ref": "#/$defs/CircularBundle"
+  }
 }

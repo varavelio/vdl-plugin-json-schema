@@ -1,9 +1,9 @@
 import type { PluginInput } from "@varavel/vdl-plugin-sdk";
-import { getOptionString } from "@varavel/vdl-plugin-sdk/utils/options";
 
 import { JSON_SCHEMA_DRAFT } from "./json-schema-constants.js";
 import { buildDefinitions } from "./json-schema-convert.js";
 import { buildMissingRootError } from "./json-schema-errors.js";
+import { resolvePluginOptions } from "./json-schema-options.js";
 import { createDefinitionRef } from "./json-schema-refs.js";
 import type { JsonSchemaDocument } from "./json-schema-types.js";
 
@@ -16,8 +16,13 @@ import type { JsonSchemaDocument } from "./json-schema-types.js";
 export function buildJsonSchemaDocument(
   input: PluginInput,
 ): JsonSchemaDocument | { error: string } {
-  const id = getOptionString(input.options, "id", "");
-  const root = getOptionString(input.options, "root", "");
+  const resolved = resolvePluginOptions(input.options);
+
+  if ("error" in resolved) {
+    return { error: resolved.error };
+  }
+
+  const { id, root } = resolved.options;
   const definitions = buildDefinitions(input.ir);
 
   if (root !== "" && definitions[root] === undefined) {
@@ -26,18 +31,10 @@ export function buildJsonSchemaDocument(
     };
   }
 
-  const document: JsonSchemaDocument = {
+  return {
     $schema: JSON_SCHEMA_DRAFT,
+    ...(id !== "" ? { $id: id } : {}),
+    ...(root !== "" ? { $ref: createDefinitionRef(root) } : {}),
     $defs: definitions,
   };
-
-  if (id !== "") {
-    document.$id = id;
-  }
-
-  if (root !== "") {
-    document.$ref = createDefinitionRef(root);
-  }
-
-  return document;
 }

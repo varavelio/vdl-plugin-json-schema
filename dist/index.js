@@ -1,6 +1,8 @@
 "use strict";
 var __defProp = Object.defineProperty;
+var __defProps = Object.defineProperties;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropDescs = Object.getOwnPropertyDescriptors;
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __getOwnPropSymbols = Object.getOwnPropertySymbols;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
@@ -17,6 +19,7 @@ var __spreadValues = (a, b) => {
     }
   return a;
 };
+var __spreadProps = (a, b) => __defProps(a, __getOwnPropDescs(b));
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 var __export = (target, all) => {
   for (var name in all)
@@ -72,13 +75,6 @@ function toPluginError(error) {
   return { message: "An unknown generation error occurred." };
 }
 __name(toPluginError, "toPluginError");
-
-// node_modules/@varavel/vdl-plugin-sdk/dist/utils/options/get-option-string.js
-function getOptionString(options, key, defaultValue) {
-  const value = options === null || options === void 0 ? void 0 : options[key];
-  return value === void 0 ? defaultValue : value;
-}
-__name(getOptionString, "getOptionString");
 
 // src/json-schema-constants.ts
 var JSON_SCHEMA_DRAFT = "https://json-schema.org/draft/2020-12/schema";
@@ -496,12 +492,38 @@ function boundedDamerauLevenshtein(left, right, maxDistance) {
 __name(boundedDamerauLevenshtein, "boundedDamerauLevenshtein");
 
 // src/json-schema-errors.ts
+function buildUnknownOptionError(unknownNames, supportedNames) {
+  var _a2;
+  const quoted = unknownNames.map((name) => `"${name}"`).join(", ");
+  const suggestions = fuzzySearch(
+    supportedNames,
+    (_a2 = unknownNames[0]) != null ? _a2 : ""
+  ).matches;
+  const suggestionSuffix = suggestions.length === 0 ? "" : ` Did you mean ${formatSuggestions(suggestions)}?`;
+  return `Unknown option ${quoted}. Supported options are ${formatList(supportedNames)}.${suggestionSuffix}`;
+}
+__name(buildUnknownOptionError, "buildUnknownOptionError");
+function buildInvalidOutFileError(outFile, reason) {
+  return `Invalid "outFile" "${outFile}": ${reason}, for example "schema.json".`;
+}
+__name(buildInvalidOutFileError, "buildInvalidOutFileError");
+function buildInvalidIdError(id) {
+  return `Invalid "id" "${id}": the schema identifier must not contain whitespace. Use a valid URI such as "https://example.com/schemas/schema.json".`;
+}
+__name(buildInvalidIdError, "buildInvalidIdError");
 function buildMissingRootError(definitionNames, root) {
+  if (definitionNames.length === 0) {
+    return `Root type "${root}" was not found: the schema contains no type or enum definitions. Add a type or enum to the schema or remove the "root" option.`;
+  }
   const suggestions = fuzzySearch(definitionNames, root).matches;
   const suggestionSuffix = suggestions.length === 0 ? "" : ` Did you mean ${formatSuggestions(suggestions)}?`;
   return `Root type "${root}" was not found in the generated schema definitions.${suggestionSuffix}`;
 }
 __name(buildMissingRootError, "buildMissingRootError");
+function formatList(names) {
+  return names.map((name) => `"${name}"`).join(", ");
+}
+__name(formatList, "formatList");
 function formatSuggestions(suggestions) {
   if (suggestions.length === 1) {
     return `"${suggestions[0]}"`;
@@ -517,38 +539,92 @@ function formatSuggestions(suggestions) {
 }
 __name(formatSuggestions, "formatSuggestions");
 
+// node_modules/@varavel/vdl-plugin-sdk/dist/utils/options/get-option-string.js
+function getOptionString(options, key, defaultValue) {
+  const value = options === null || options === void 0 ? void 0 : options[key];
+  return value === void 0 ? defaultValue : value;
+}
+__name(getOptionString, "getOptionString");
+
+// src/json-schema-options.ts
+var SUPPORTED_OPTION_NAMES = ["id", "outFile", "root"];
+function resolvePluginOptions(options) {
+  const provided = options != null ? options : {};
+  const unknown = Object.keys(provided).filter((name) => !SUPPORTED_OPTION_NAMES.includes(name)).sort((left, right) => left.localeCompare(right));
+  if (unknown.length > 0) {
+    return {
+      error: buildUnknownOptionError(unknown, [...SUPPORTED_OPTION_NAMES])
+    };
+  }
+  const id = getOptionString(provided, "id", "").trim();
+  const root = getOptionString(provided, "root", "").trim();
+  const outFile = getOptionString(
+    provided,
+    "outFile",
+    DEFAULT_OUTPUT_PATH
+  ).trim();
+  const resolvedOutFile = outFile === "" ? DEFAULT_OUTPUT_PATH : outFile;
+  const outFileError = validateOutFile(resolvedOutFile);
+  if (outFileError !== void 0) {
+    return { error: outFileError };
+  }
+  if (id !== "" && /\s/.test(id)) {
+    return { error: buildInvalidIdError(id) };
+  }
+  return { options: { id, root, outFile: resolvedOutFile } };
+}
+__name(resolvePluginOptions, "resolvePluginOptions");
+function validateOutFile(outFile) {
+  if (!outFile.endsWith(".json")) {
+    return buildInvalidOutFileError(
+      outFile,
+      'the output file must end with ".json"'
+    );
+  }
+  if (isAbsolutePath(outFile) || outFile.split(/[\\/]/).includes("..")) {
+    return buildInvalidOutFileError(
+      outFile,
+      'the output file must be a relative path inside "outDir" without ".." segments'
+    );
+  }
+  return void 0;
+}
+__name(validateOutFile, "validateOutFile");
+function isAbsolutePath(path) {
+  return path.startsWith("/") || path.startsWith("\\") || /^[a-zA-Z]:[\\/]/.test(path);
+}
+__name(isAbsolutePath, "isAbsolutePath");
+
 // src/json-schema-document.ts
 function buildJsonSchemaDocument(input) {
-  const id = getOptionString(input.options, "id", "");
-  const root = getOptionString(input.options, "root", "");
+  const resolved = resolvePluginOptions(input.options);
+  if ("error" in resolved) {
+    return { error: resolved.error };
+  }
+  const { id, root } = resolved.options;
   const definitions = buildDefinitions(input.ir);
   if (root !== "" && definitions[root] === void 0) {
     return {
       error: buildMissingRootError(Object.keys(definitions), root)
     };
   }
-  const document = {
-    $schema: JSON_SCHEMA_DRAFT,
+  return __spreadProps(__spreadValues(__spreadValues({
+    $schema: JSON_SCHEMA_DRAFT
+  }, id !== "" ? { $id: id } : {}), root !== "" ? { $ref: createDefinitionRef(root) } : {}), {
     $defs: definitions
-  };
-  if (id !== "") {
-    document.$id = id;
-  }
-  if (root !== "") {
-    document.$ref = createDefinitionRef(root);
-  }
-  return document;
+  });
 }
 __name(buildJsonSchemaDocument, "buildJsonSchemaDocument");
 
 // src/json-schema-generate.ts
 function generateFunc(input) {
+  const resolved = resolvePluginOptions(input.options);
+  if ("error" in resolved) {
+    return {
+      errors: [{ message: resolved.error }]
+    };
+  }
   const document = buildJsonSchemaDocument(input);
-  const outFile = getOptionString(
-    input.options,
-    "outFile",
-    DEFAULT_OUTPUT_PATH
-  );
   if ("error" in document) {
     return {
       errors: [{ message: document.error }]
@@ -557,7 +633,7 @@ function generateFunc(input) {
   return {
     files: [
       {
-        path: outFile === "" ? DEFAULT_OUTPUT_PATH : outFile,
+        path: resolved.options.outFile,
         content: `${JSON.stringify(document, null, 2)}
 `
       }
